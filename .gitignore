@@ -4,3 +4,11 @@
 !/mvnw
 !/mvnw.cmd
 !/mybatis-plus.iml
+.idea/
+.mvn/
+HELP.md
+mvnw
+mvnw.cmd
+mybatis-plus.iml
+src/main/resources/static/
+src/main/resources/templates/
