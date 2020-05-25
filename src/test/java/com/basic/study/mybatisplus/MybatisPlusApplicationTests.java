@@ -2,6 +2,7 @@ package com.basic.study.mybatisplus;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.enums.SqlLike;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.basic.study.mybatisplus.bean.User;
 import com.basic.study.mybatisplus.mapper.UserMapper;
 import com.google.common.collect.Maps;
@@ -12,10 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -199,4 +197,88 @@ class MybatisPlusApplicationTests {
         List<User> userList = userMapper.selectList(queryWrapper);
         Assert.assertEquals(1,userList.size());
     }
+
+    @Test
+    /**
+     *条件构造器查询 select不列出全部字段
+     *name like ‘%雨%’ and age<40
+     */
+    public void selectByWrapperSelect() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>();
+        //QueryWrapper<User> query= Wrappers.query();
+        //select的列名如果和属性名不一致 可以这么写,但是没有查询的列映射到属性会变成null
+        queryWrapper.select("id userId","name realName","email").like("name","马").lt("age",40);
+        List<User> userList = userMapper.selectList(queryWrapper);
+        Assert.assertEquals(3,userList.size());
+    }
+    @Test
+    /**
+     *   条件构造器查询 select不列出全部字段
+     */
+    public void selectByWrapperSelect2() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>();
+        queryWrapper.select(User.class,tableFieldInfo -> !tableFieldInfo.getColumn().equals("create_time")&&
+                !tableFieldInfo.getColumn().equals("manager_id"));//查的时候排除create_time和manager_id
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+    }
+    @Test
+    /**
+     * 条件构造器查询 select不列出全部字段 Condition
+     */
+    public void selectByWrapperCondition() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>();
+        String name="马";
+        String email="";
+        queryWrapper.like(StringUtils.isNotEmpty(name),"name",name)
+                .like(StringUtils.isNotEmpty(email),"email",email);
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+    }
+
+    @Test
+    /**
+     * 条件构造器查询
+     * name like ‘%雨%’ and age<40
+     */
+    public void selectByWrapperEntity() {
+        User whereUser =new User();
+        whereUser.setName("马三"); //但默认这样写是按照=来查询，如果想要like，可以在实体类属性的@TableField 中设置condition = SqlCondition.LIKE
+        whereUser.setAge(18);
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>(whereUser);
+        //queryWrapper.like("name", "刘").lt("age", 40); //可以继续条件查询 name=? AND age=? AND name LIKE ? AND age < ?
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+    }
+
+    @Test
+    /**
+     * allEq的作用可以把参数map中 key对应的value为null进行处理  true  xx is null  false  去除 xx
+     */
+    public void selectByWrapperAllEq() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>();
+        Map<String,Object> parms= new HashMap<String,Object>();
+        parms.put("name","马誌浩");
+        //parms.put("age",25);
+        parms.put("age",null);//sql里就是age IS NULL
+        queryWrapper.allEq(parms,false);
+        //queryWrapper.allEq(parms);
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+    }
+
+
+    @Test
+    public void selectByWrapperAllEq3() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>();
+        Map<String,Object> parms= new HashMap<String,Object>();
+        parms.put("name","马誌浩");
+        //parms.put("age",25);
+        parms.put("age",null);
+        queryWrapper.allEq((k,v)->!k.equals("name"),parms);// 满足条件的（true）才会添加到条件中
+        List<User> userList = userMapper.selectList(queryWrapper);
+        userList.forEach(System.out::println);
+    }
+
+
 }
