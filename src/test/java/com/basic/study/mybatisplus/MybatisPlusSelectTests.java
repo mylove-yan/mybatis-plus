@@ -17,7 +17,7 @@ import java.util.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-class MybatisPlusApplicationTests {
+class MybatisPlusSelectTests {
 
     @Autowired
     private UserMapper userMapper;
@@ -280,5 +280,55 @@ class MybatisPlusApplicationTests {
         userList.forEach(System.out::println);
     }
 
+    @Test
+    /**
+     * select不列出全部字段，返回map，并且查那些字段就只放这些字段到map中,不会有多余的字段
+     */
+    public void selectByMaps() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>();
+        queryWrapper.select("id","name").like("name", "马").lt("age", 40);
+        List<Map<String, Object>> maps = userMapper.selectMaps(queryWrapper);
+        maps.forEach(System.out::println);
+    }
 
+    @Test
+    /**
+     * 按照直属上级分组，查询每组的平均年龄、最大年龄、最小年龄。并且只取年龄总和小于500的组
+     * select avg(age) avg_age,min(age) min_age,max(age) max_age
+     * from user
+     * group by manager_id
+     * having sum(age) <500
+     */
+    public void selectByMap2() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>();
+
+        queryWrapper.select("avg(age) avg_age","min(age) min_age","max(age) max_age")
+                .groupBy("manager_id")
+                .having("sum(age) <{0}",5000);
+        List<Map<String, Object>> maps = userMapper.selectMaps(queryWrapper);
+        maps.forEach(System.out::println);
+    }
+
+    @Test
+    /**
+     * selectObjs不列出全部字段，返回map，并且查那些字段就只放这些字段到map中,不会有多余的字段,并且只显示第一列的结果
+     */
+    public void selectObjs() {
+
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>();
+
+        queryWrapper.select("id","name").like("name", "马").lt("age", 40);
+
+        List<Object> list = userMapper.selectObjs(queryWrapper);
+        list.forEach(System.out::println);
+    }
+
+    @Test
+    // selectOne  如果查到大于一条的就会报错
+    public void selectOne() {
+        QueryWrapper<User> queryWrapper = new QueryWrapper<User>();
+        queryWrapper.like("name", "马").lt("age", 40);
+        User user = userMapper.selectOne(queryWrapper);
+        System.out.println(user);
+    }
 }
